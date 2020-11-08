@@ -22,6 +22,7 @@ const C_PALETTE: [(u8, u8, u8); 5] = [
     (27, 29, 27),
 ];
 
+/// color red
 const C_RED: (u8, u8, u8) = (255, 0, 0);
 
 /// direction of an object in the grid
@@ -84,7 +85,7 @@ impl Snake {
     }
 
     /// change the position of all the grids of which the snake is comprised
-    fn update_pos(&mut self, grid_width: i32, grid_height: i32) {
+    fn move_forward(&mut self, grid_width: i32, grid_height: i32) {
         let mut prev_pos = self.pos_head;
         match self.heading {
             Heading::Up => {
@@ -204,7 +205,7 @@ impl event::EventHandler for MainState {
             if self.is_over {
                 continue;
             }
-            self.snake.update_pos(GRID_WIDTH, GRID_HEIGHT);
+            self.snake.move_forward(GRID_WIDTH, GRID_HEIGHT);
             if self.snake.is_dead() {
                 self.is_over = true;
             }
