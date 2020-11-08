@@ -8,7 +8,7 @@ use ggez::{Context, GameResult};
 const GRID_SIZE: f32 = 20.0;
 const GRID_HEIGHT: i32 = 40;
 const GRID_WIDTH: i32 = 40;
-const FPS: u32 = 10;
+const INITIAL_DIFFICULTY: f32 = 8.0;
 
 const WINDOW_WIDTH: f32 = GRID_SIZE * GRID_WIDTH as f32;
 const WINDOW_HEIGHT: f32 = GRID_SIZE * GRID_HEIGHT as f32;
@@ -82,6 +82,10 @@ impl Snake {
             pos_head,
             pos_body: Vec::new(),
         }
+    }
+
+    fn length(&self) -> usize {
+        self.pos_body.len() + 1
     }
 
     /// change the position of all the grids of which the snake is comprised
@@ -164,6 +168,7 @@ impl Snake {
 struct MainState {
     snake: Snake,
     apple: Apple,
+    difficulty: f32,
     is_over: bool,
 }
 
@@ -181,6 +186,7 @@ impl MainState {
             snake: Snake::new(pos_snake_head),
             apple: Apple::new(pos_apple),
             is_over: false,
+            difficulty: INITIAL_DIFFICULTY,
         };
         Ok(s)
     }
@@ -201,7 +207,7 @@ impl MainState {
 
 impl event::EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        while timer::check_update_time(ctx, FPS) {
+        while timer::check_update_time(ctx, self.difficulty as u32) {
             if self.is_over {
                 continue;
             }
@@ -216,6 +222,8 @@ impl event::EventHandler for MainState {
                 }
                 self.apple.set_pos(new_apple_pos);
                 self.snake.grow();
+                let inc_diff = (GRID_WIDTH * GRID_HEIGHT) as f32 / self.snake.length() as f32;
+                self.difficulty += 0.05 * inc_diff.log10();
             }
         }
         Ok(())
@@ -289,8 +297,20 @@ impl event::EventHandler for MainState {
                 graphics::DrawParam::default().dest(txt_game_over_dst),
             )?;
         } else {
+            let fps = ggez::timer::fps(ctx);
+            let mut txt_fps = graphics::Text::new(
+                graphics::TextFragment::new(format!("FPS: {}\n", fps))
+                    .color(C_PALETTE[0].into())
+                    .scale(graphics::Scale::uniform(16.0)),
+            );
+            txt_fps.add(
+                graphics::TextFragment::new(format!("DIFF: {}", self.difficulty))
+                    .color(C_PALETTE[0].into())
+                    .scale(graphics::Scale::uniform(16.0)),
+            );
             self.snake.draw(ctx, GRID_SIZE)?;
             self.apple.draw(ctx, GRID_SIZE)?;
+            graphics::draw(ctx, &txt_fps, graphics::DrawParam::default())?;
         }
         graphics::present(ctx)?;
         ggez::timer::yield_now();
